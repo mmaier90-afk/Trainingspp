@@ -462,6 +462,8 @@
     @media(max-width:560px){.time-hero-grid{grid-template-columns:1fr}.time-card-value{font-size:34px}.split-time-row{grid-template-columns:54px 1fr auto}.graph-header-clean{display:grid}.multi-graph-svg{height:260px}}
 
 
+    html,body{overflow-x:hidden}
+    body{overflow-y:auto;-webkit-overflow-scrolling:touch}
     .set-toggle.locked{
       opacity:.48;
       filter:saturate(.65);
@@ -522,21 +524,18 @@ function copySetToNextIfEmpty(d,i,s){
  const total=plan[d].ex[i][3];
  const next=s+1;
  if(next>=total) return;
- const kg=sg(setKgKey(d,i,s));
- const reps=sg(setRepsKey(d,i,s));
+ const kg=(document.getElementById(`kg_${d}_${i}_${s}`)?.value || sg(setKgKey(d,i,s)) || "").trim();
+ const reps=(document.getElementById(`reps_${d}_${i}_${s}`)?.value || sg(setRepsKey(d,i,s)) || "").trim();
  const nextKgKey=setKgKey(d,i,next);
  const nextRepsKey=setRepsKey(d,i,next);
  if(kg && !sg(nextKgKey)){
   ss(nextKgKey,kg);
-  const kgInput=document.getElementById(`kg_${d}_${i}_${next}`);
-  if(kgInput) kgInput.value=kg;
  }
  if(reps && !sg(nextRepsKey)){
   ss(nextRepsKey,reps);
-  const repsInput=document.getElementById(`reps_${d}_${i}_${next}`);
-  if(repsInput) repsInput.value=reps;
  }
 }
+
 
 function setupSessionUI(){
  const start=sg("sessionStart");
@@ -575,12 +574,24 @@ async function finishTraining(){
  render();
  status("Training beendet, gespeichert und Eingaben zurückgesetzt.", "ok");
 }
-function render(){for(const d of Object.keys(plan)){const el=document.getElementById(d);el.innerHTML=`<div class="summary"><strong>${plan[d].title}</strong><br>${plan[d].summary}</div>`;plan[d].ex.forEach((x,i)=>{let rows=`<div class="set-labels"><span>Satz</span><span>Gewicht</span><span>Wdh.</span></div><div class="set-table">`;for(let s=0;s<x[3];s++){rows+=`<div class="set-row"><button class="set-toggle ${sg(doneKey(d,i,s))==="1"?"done":(!setHasRequiredInput(d,i,s)?"locked":"")}" title="${setHasRequiredInput(d,i,s)?"Satz abhaken":"Erst Gewicht und Wdh. eintragen"}" onclick="toggle('${d}',${i},${s})">${s+1}</button><input id="kg_${d}_${i}_${s}" inputmode="decimal" placeholder="kg" value="${esc(sg(setKgKey(d,i,s)))}" oninput="setField('${setKgKey(d,i,s)}',this.value)"><input id="reps_${d}_${i}_${s}" inputmode="numeric" placeholder="Wdh." value="${esc(sg(setRepsKey(d,i,s)))}" oninput="setField('${setRepsKey(d,i,s)}',this.value)"></div>`}rows+=`</div>`;el.innerHTML+=`<article class="card"><div class="top"><div><h2>${x[0]}</h2><div class="meta">${x[1]}</div></div><a class="button video" href="${x[2]}" target="_blank" rel="noopener">▶ Video</a></div>${rows}<div class="note-wrap"><input class="note" placeholder="Notiz / Technikgefühl" value="${esc(sg(noteKey(d,i)))}" oninput="setField('${noteKey(d,i)}',this.value)"></div><div id="last_${d}_${i}" class="last"></div></article>`})}showDay(active,false);restoreAthlete();setupGoalCounter();setupSessionUI();}
-function showDay(d,scroll=true){active=d;ss("activeDay",d);document.querySelectorAll(".day,.screen").forEach(x=>x.classList.remove("active"));document.getElementById(d).classList.add("active");document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.getElementById("tab-"+d).classList.add("active");progress();if(scroll)window.scrollTo({top:0,behavior:"smooth"});}
-function setScreen(id, tab){document.querySelectorAll(".day,.screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.getElementById(tab).classList.add("active");document.getElementById("bar").style.width="0%";document.getElementById("pct").textContent=id==="dashboard"?"Stats":"DB";}
-function showHistory(){setScreen("history","tab-history");renderHistory()} function showDashboard(){setScreen("dashboard","tab-dashboard");renderDashboard()}
 function setHasRequiredInput(d,i,s){
- return !!sg(setKgKey(d,i,s)).trim() && !!sg(setRepsKey(d,i,s)).trim();
+ const kgVal=(document.getElementById(`kg_${d}_${i}_${s}`)?.value || sg(setKgKey(d,i,s)) || "").trim();
+ const repsVal=(document.getElementById(`reps_${d}_${i}_${s}`)?.value || sg(setRepsKey(d,i,s)) || "").trim();
+ return !!kgVal && !!repsVal;
+}
+function refreshSetButton(d,i,s){
+ const btn=document.getElementById(`setbtn_${d}_${i}_${s}`);
+ if(!btn) return;
+ const done=sg(doneKey(d,i,s))==="1";
+ const ready=setHasRequiredInput(d,i,s);
+ btn.classList.toggle("done",done);
+ btn.classList.toggle("locked",!done && !ready);
+ btn.title=ready ? "Satz abhaken" : "Erst Gewicht und Wdh. eintragen";
+}
+function onSetInput(d,i,s,type,val){
+ if(type==="kg") ss(setKgKey(d,i,s),val);
+ else ss(setRepsKey(d,i,s),val);
+ refreshSetButton(d,i,s);
 }
 function markMissingSetInputs(d,i,s){
  const kg=document.getElementById(`kg_${d}_${i}_${s}`);
@@ -597,7 +608,30 @@ function markMissingSetInputs(d,i,s){
   setTimeout(()=>{reps.style.borderColor=""},900);
  }
 }
-
+function render(){
+ for(const d of Object.keys(plan)){
+  const el=document.getElementById(d);
+  if(!el) continue;
+  el.innerHTML=`<div class="summary"><strong>${plan[d].title}</strong><br>${plan[d].summary}</div>`;
+  plan[d].ex.forEach((x,i)=>{
+   let rows=`<div class="set-labels"><span>Satz</span><span>Gewicht</span><span>Wdh.</span></div><div class="set-table">`;
+   for(let s=0;s<x[3];s++){
+    const done=sg(doneKey(d,i,s))==="1";
+    const ready=!!sg(setKgKey(d,i,s)).trim() && !!sg(setRepsKey(d,i,s)).trim();
+    rows+=`<div class="set-row"><button id="setbtn_${d}_${i}_${s}" class="set-toggle ${done?"done":(!ready?"locked":"")}" title="${ready?"Satz abhaken":"Erst Gewicht und Wdh. eintragen"}" onclick="toggle('${d}',${i},${s})">${s+1}</button><input id="kg_${d}_${i}_${s}" inputmode="decimal" placeholder="kg" value="${esc(sg(setKgKey(d,i,s)))}" oninput="onSetInput('${d}',${i},${s},'kg',this.value)"><input id="reps_${d}_${i}_${s}" inputmode="numeric" placeholder="Wdh." value="${esc(sg(setRepsKey(d,i,s)))}" oninput="onSetInput('${d}',${i},${s},'reps',this.value)"></div>`;
+   }
+   rows+=`</div>`;
+   el.innerHTML+=`<article class="card"><div class="top"><div><h2>${x[0]}</h2><div class="meta">${x[1]}</div></div><a class="button video" href="${x[2]}" target="_blank" rel="noopener">▶ Video</a></div>${rows}<div class="note-wrap"><input class="note" placeholder="Notiz / Technikgefühl" value="${esc(sg(noteKey(d,i)))}" oninput="setField('${noteKey(d,i)}',this.value)"></div><div id="last_${d}_${i}" class="last"></div></article>`;
+  });
+ }
+ showDay(active,false);
+ restoreAthlete();
+ setupGoalCounter();
+ setupSessionUI();
+}
+function showDay(d,scroll=true){active=d;ss("activeDay",d);document.querySelectorAll(".day,.screen").forEach(x=>x.classList.remove("active"));document.getElementById(d).classList.add("active");document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.getElementById("tab-"+d).classList.add("active");progress();if(scroll)window.scrollTo({top:0,behavior:"smooth"});}
+function setScreen(id, tab){document.querySelectorAll(".day,.screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.getElementById(tab).classList.add("active");document.getElementById("bar").style.width="0%";document.getElementById("pct").textContent=id==="dashboard"?"Stats":"DB";}
+function showHistory(){setScreen("history","tab-history");renderHistory()} function showDashboard(){setScreen("dashboard","tab-dashboard");renderDashboard()}
 function toggle(d,i,s){
  const isDone=sg(doneKey(d,i,s))==="1";
  if(!isDone && !setHasRequiredInput(d,i,s)){
@@ -663,16 +697,12 @@ function buildAllExerciseWeightGraph(rows, splitName){
    return {idx,label:workoutDateLabel(w,idx+1),value:ex?exerciseTopWeight(ex):0};
   }).filter(p=>p.value>0)
  })).filter(s=>s.values.length>=1);
-
  if(ordered.length<2 || series.length===0){
   return `<div class="dashboard-empty">Für den ${esc(splitName)}-Graphen brauchst du mindestens zwei gespeicherte ${esc(splitName)}-Einheiten mit Gewichtsangaben.</div>`;
  }
-
  const W=760,H=330,padL=44,padR=18,padT=20,padB=46;
  const allValues=series.flatMap(s=>s.values.map(p=>p.value));
- const max=Math.max(...allValues,1);
- const min=0;
- const range=Math.max(1,max-min);
+ const max=Math.max(...allValues,1), min=0, range=Math.max(1,max-min);
  const xStep=(W-padL-padR)/Math.max(1,ordered.length-1);
  const yFor=v=>padT+(H-padT-padB)*(1-(v-min)/range);
  const xFor=idx=>padL+idx*xStep;
@@ -699,82 +729,34 @@ function buildAllExerciseWeightGraph(rows, splitName){
   const last=s.values[s.values.length-1]?.value || 0;
   return `<span class="legend-item"><span class="legend-dot" style="background:${color};color:${color}"></span>${esc(s.name)} · ${last} kg</span>`;
  }).join("");
- return `<svg class="multi-graph-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gewichtsentwicklung ${esc(splitName)}">
-   ${grid}
-   ${paths}
-   ${xLabels}
-  </svg>
-  <div class="multi-legend">${legend}</div>`;
+ return `<svg class="multi-graph-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gewichtsentwicklung ${esc(splitName)}">${grid}${paths}${xLabels}</svg><div class="multi-legend">${legend}</div>`;
 }
 async function renderDashboard(){
  const box=document.getElementById("dashboardContent");
  const a=athlete();
- if(!a){
-  box.innerHTML=`<div class="dashboard-empty">Bitte oben einen Namen eingeben. Dann zeige ich Gesamtzeit, Split-Zeiten und je Split einen Gewichtsgraphen.</div>`;
-  return;
- }
+ if(!a){ box.innerHTML=`<div class="dashboard-empty">Bitte oben einen Namen eingeben. Dann zeige ich Gesamtzeit, Split-Zeiten und je Split einen Gewichtsgraphen.</div>`; return; }
+ if(!db){ box.innerHTML=`<div class="dashboard-empty">Datenbank wird noch geladen. Bitte gleich nochmal Dashboard antippen.</div>`; return; }
  const all=(await allWorkouts()).filter(w=>w.athleteLower===a.toLowerCase()).sort((a,b)=>b.timestamp.localeCompare(a.timestamp));
- if(!all.length){
-  box.innerHTML=`<div class="dashboard-empty">Noch keine gespeicherten Trainings für ${esc(a)}. Nach dem ersten Stop & Save erscheint hier dein Dashboard.</div>`;
-  return;
- }
-
+ if(!all.length){ box.innerHTML=`<div class="dashboard-empty">Noch keine gespeicherten Trainings für ${esc(a)}. Nach dem ersten Stop & Save erscheint hier dein Dashboard.</div>`; return; }
  const totalTime=all.reduce((sum,w)=>sum+durationMs(w),0);
  const splitTimes={Push:0,Pull:0,Beine:0};
  const splitCounts={Push:0,Pull:0,Beine:0};
- all.forEach(w=>{
-  if(splitTimes[w.dayTitle]!==undefined){
-   splitTimes[w.dayTitle]+=durationMs(w);
-   splitCounts[w.dayTitle]+=1;
-  }
- });
+ all.forEach(w=>{ if(splitTimes[w.dayTitle]!==undefined){ splitTimes[w.dayTitle]+=durationMs(w); splitCounts[w.dayTitle]+=1; } });
  const maxSplitTime=Math.max(...Object.values(splitTimes),1);
  const avgTime=Math.round(totalTime/Math.max(all.length,1));
-
  box.innerHTML=`
  <div class="dashboard-clean">
   <div class="time-hero-grid">
-   <div class="big-time-card">
-    <div class="time-card-label">Gesamte Trainingszeit</div>
-    <div class="time-card-value">${formatDurationShort(totalTime)}</div>
-    <div class="time-card-sub">${formatDurationLong(totalTime)} über ${all.length} gespeicherte Einheiten</div>
-   </div>
-   <div class="big-time-card">
-    <div class="time-card-label">Ø Trainingszeit</div>
-    <div class="time-card-value">${formatDurationShort(avgTime)}</div>
-    <div class="time-card-sub">durchschnittlich pro Einheit</div>
-   </div>
+   <div class="big-time-card"><div class="time-card-label">Gesamte Trainingszeit</div><div class="time-card-value">${formatDurationShort(totalTime)}</div><div class="time-card-sub">${formatDurationLong(totalTime)} über ${all.length} gespeicherte Einheiten</div></div>
+   <div class="big-time-card"><div class="time-card-label">Ø Trainingszeit</div><div class="time-card-value">${formatDurationShort(avgTime)}</div><div class="time-card-sub">durchschnittlich pro Einheit</div></div>
   </div>
-
   <div class="split-time-panel">
-   <div class="graph-header-clean">
-    <div>
-     <div class="graph-title-clean">Trainingszeit pro Split</div>
-     <div class="graph-sub-clean">Verteilung deiner gespeicherten Trainingszeit.</div>
-    </div>
-    <span class="graph-stat-pill">${formatDurationShort(totalTime)} gesamt</span>
-   </div>
-   <div class="split-time-list">
-    ${Object.entries(splitTimes).map(([name,val])=>`<div class="split-time-row">
-      <span class="split-time-row-name">${splitEmoji(name)} ${esc(name)}</span>
-      <div class="split-time-track"><div class="split-time-fill" style="width:${Math.round(val/maxSplitTime*100)}%"></div></div>
-      <span class="split-time-row-value">${formatDurationShort(val)}</span>
-     </div>`).join("")}
-   </div>
+   <div class="graph-header-clean"><div><div class="graph-title-clean">Trainingszeit pro Split</div><div class="graph-sub-clean">Verteilung deiner gespeicherten Trainingszeit.</div></div><span class="graph-stat-pill">${formatDurationShort(totalTime)} gesamt</span></div>
+   <div class="split-time-list">${Object.entries(splitTimes).map(([name,val])=>`<div class="split-time-row"><span class="split-time-row-name">${splitEmoji(name)} ${esc(name)}</span><div class="split-time-track"><div class="split-time-fill" style="width:${Math.round(val/maxSplitTime*100)}%"></div></div><span class="split-time-row-value">${formatDurationShort(val)}</span></div>`).join("")}</div>
   </div>
-
   ${["Push","Pull","Beine"].map(split=>{
-    const rows=all.filter(w=>w.dayTitle===split);
-    return `<div class="all-exercise-graph">
-      <div class="graph-header-clean">
-       <div>
-        <div class="graph-title-clean">${splitEmoji(split)} Gewichtsentwicklung · ${esc(split)}</div>
-        <div class="graph-sub-clean">Alle Übungen als Linien. Gezeigt wird das höchste Gewicht pro Übung und Trainingstag.</div>
-       </div>
-       <span class="graph-stat-pill">${rows.length} Einheiten</span>
-      </div>
-      <div class="multi-graph-box">${buildAllExerciseWeightGraph(rows,split)}</div>
-    </div>`;
+   const rows=all.filter(w=>w.dayTitle===split);
+   return `<div class="all-exercise-graph"><div class="graph-header-clean"><div><div class="graph-title-clean">${splitEmoji(split)} Gewichtsentwicklung · ${esc(split)}</div><div class="graph-sub-clean">Alle Übungen als Linien. Gezeigt wird das höchste Gewicht pro Übung und Trainingstag.</div></div><span class="graph-stat-pill">${rows.length} Einheiten</span></div><div class="multi-graph-box">${buildAllExerciseWeightGraph(rows,split)}</div></div>`;
   }).join("")}
  </div>`;
 }
@@ -782,7 +764,19 @@ async function exportDb(){const rows=await allWorkouts(); const lines=["Person;T
 function clearCurrentDayInputs(){plan[active].ex.forEach((x,i)=>{localStorage.removeItem(noteKey(active,i));for(let s=0;s<x[3];s++){localStorage.removeItem(doneKey(active,i,s));localStorage.removeItem(setKgKey(active,i,s));localStorage.removeItem(setRepsKey(active,i,s));}});}
 function timer(sec){clearInterval(interval);let r=sec,el=document.getElementById("timer");function tick(){let m=String(Math.floor(r/60)).padStart(2,"0"),s=String(r%60).padStart(2,"0");el.textContent="Pause "+m+":"+s;if(r<=0){clearInterval(interval);el.textContent="Pause fertig";if(navigator.vibrate)navigator.vibrate([180,80,180])}r--}tick();interval=setInterval(tick,1000)}
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
-openDb().then(()=>{render();status("Datenbank bereit. Start Training startet Datum und Stoppuhr; Stop & Save speichert und resetet den Tag.","ok")}).catch(()=>{render();status("Datenbank konnte nicht geöffnet werden. Prüfe Safari/Private-Modus.","err")});
+try{
+ render();
+ status("App bereit. Datenbank wird geladen …","ok");
+}catch(e){
+ console.error(e);
+ const st=document.getElementById("status");
+ if(st){st.textContent="Render-Fehler: Bitte Seite neu laden oder Cache leeren.";st.className="status err";}
+}
+openDb().then(()=>{
+ status("Datenbank bereit. Start Training startet Datum und Stoppuhr; Stop & Save speichert und resetet den Tag.","ok");
+}).catch(()=>{
+ status("Übungen sind nutzbar, aber die Datenbank konnte nicht geöffnet werden. Prüfe Safari/Private-Modus.","err");
+});
 </script>
 </body>
 </html>
