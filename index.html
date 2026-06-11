@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="3er Split">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>3er Split Training</title>
+  <style>
+    :root{--bg:#0b1220;--card:#141c2e;--card2:#1d2740;--text:#f7fafc;--muted:#a8b3c7;--accent:#5eead4;--danger:#fb7185;--line:rgba(255,255,255,.10);--safe-bottom:env(safe-area-inset-bottom)}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{margin:0;background:radial-gradient(circle at top,#172554 0,#0b1220 45%,#050816 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;min-height:100vh;padding-bottom:calc(92px + var(--safe-bottom))}
+    header{padding:calc(16px + env(safe-area-inset-top)) 16px 12px;position:sticky;top:0;z-index:5;backdrop-filter:blur(18px);background:rgba(5,8,22,.82);border-bottom:1px solid var(--line)}
+    h1{font-size:24px;letter-spacing:-.04em;margin:0 0 4px}.hint{color:var(--muted);font-size:14px;line-height:1.35}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 0}
+    button,a.button{border:0;border-radius:16px;color:var(--text);background:var(--card2);font-weight:700;padding:12px 10px;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+    .tabs button.active{background:var(--accent);color:#02201d}
+    main{max-width:820px;margin:0 auto;padding:14px}.day{display:none}.day.active{display:block}
+    .summary{background:rgba(96,165,250,.13);border:1px solid rgba(96,165,250,.25);border-radius:20px;padding:14px;color:#dbeafe;line-height:1.4;margin-bottom:12px}
+    .progressbox{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px}.bar{height:10px;background:rgba(255,255,255,.11);border-radius:99px;overflow:hidden}.bar div{height:100%;width:0;background:var(--accent);transition:.18s width}.pct{font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+    .card{background:rgba(20,28,46,.96);border:1px solid var(--line);border-radius:24px;padding:14px;margin:12px 0;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    .top{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}h2{font-size:18px;margin:0 0 5px;letter-spacing:-.02em}.meta{color:var(--muted);font-size:14px;margin-bottom:12px}
+    .sets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.set{border:1px solid var(--line);background:#0b1220;color:var(--muted);border-radius:999px;padding:10px 13px;font-size:14px;min-width:74px}.set.done{background:var(--accent);color:#02201d;border-color:var(--accent)}
+    .video{background:rgba(94,234,212,.13)!important;border:1px solid rgba(94,234,212,.26)!important;color:#ccfbf1!important;font-size:14px;white-space:nowrap;padding:10px 12px!important}
+    .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}input{width:100%;border:1px solid var(--line);background:#08101f;color:var(--text);border-radius:14px;padding:12px;font:inherit;outline:none}input::placeholder{color:#718096}.note{grid-column:1/-1}
+    .bottom{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:10px 12px calc(10px + var(--safe-bottom));background:rgba(5,8,22,.9);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+    .bottom-inner{max-width:820px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.timer{background:#08101f;border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}.danger{background:rgba(251,113,133,.17)!important;color:#fecdd3!important}
+    .install{margin-top:12px;background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.20);border-radius:18px;padding:12px;color:var(--muted);font-size:14px;line-height:1.4}
+    @media(max-width:520px){.bottom-inner{grid-template-columns:1fr 1fr}.timer{grid-column:1/-1;order:-1}.inputs{grid-template-columns:1fr}.top{grid-template-columns:1fr}.video{justify-self:start}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>3er Split Training</h1>
+  <div class="hint">Muskelaufbau · Push / Pull / Beine · iPhone-optimiert</div>
+  <div class="tabs"><button id="tab-push" onclick="showDay('push')">Push</button><button id="tab-pull" onclick="showDay('pull')">Pull</button><button id="tab-legs" onclick="showDay('legs')">Beine</button></div>
+  <div class="progressbox"><div class="bar"><div id="bar"></div></div><div class="pct" id="pct">0%</div></div>
+</header>
+<main>
+  <section id="push" class="day"></section><section id="pull" class="day"></section><section id="legs" class="day"></section>
+  <div class="install"><strong>Wichtig für iOS:</strong> Diese Webapp funktioniert am saubersten, wenn sie über eine Webadresse geöffnet wird. Dann in Safari: <strong>Teilen → Zum Home-Bildschirm</strong>. Lokale Dateien aus „Dateien“ sind auf iOS oft unzuverlässig.</div>
+</main>
+<div class="bottom"><div class="bottom-inner"><button onclick="timer(90)">90s</button><button onclick="timer(120)">120s</button><div id="timer" class="timer">00:00</div><button class="danger" onclick="resetCurrent()">Tag reset</button><button onclick="exportData()">Export</button></div></div>
+<script>
+const plan={push:{title:"Push",summary:"Brust, Schulter, Trizeps. Pausen 60–90 Sek., beim Bankdrücken bis 120 Sek.",ex:[["Langhantel-Bankdrücken","3 × 6–10","https://www.youtube.com/watch?v=H4zsy81EDbI",3],["Schrägbankdrücken mit Kurzhanteln","3 × 8–12","https://www.youtube.com/watch?v=2kKsz4Pctqk",3],["Schulterdrücken mit Kurzhanteln","3 × 6–10","https://www.youtube.com/watch?v=ZSidi9EJqf4",3],["Dips","3 × 8–12","https://www.youtube.com/watch?v=aqOzVpVbZSE",3],["Seitheben mit Kurzhanteln","2–3 × 12–20","https://www.youtube.com/watch?v=DPvzvHVYnuU",3],["Trizepsdrücken am Kabelzug","2–3 × 10–15","https://www.youtube.com/watch?v=yk6VdVwww5k",3]]},pull:{title:"Pull",summary:"Rücken, hintere Schulter, Bizeps. Zieh kontrolliert und halte die Schulterblätter stabil.",ex:[["Latziehen breit oder neutral","3 × 8–12","https://www.youtube.com/watch?v=cnlq_dFL3HA",3],["Langhantelrudern","3 × 6–10","https://www.youtube.com/watch?v=uBbrwcr92Hw",3],["Einarmiges Kurzhantelrudern","3 × 8–12 je Seite","https://www.youtube.com/watch?v=Ccs4xNjkxdA",3],["Reverse Flys mit Kurzhanteln","2–3 × 12–20","https://www.youtube.com/watch?v=hcDbVb29Knc",3],["SZ-Curls","3 × 8–12","https://www.youtube.com/watch?v=wIaeG8DIOZY",3],["Bizeps-Curls am Kabelzug","2 × 10–15","https://www.youtube.com/watch?v=0fgsq6kzNrc",2]]},legs:{title:"Beine",summary:"Beine, Gesäß und Core. Bei Kniebeugen/RDLs 90–120 Sek. Pause nehmen.",ex:[["Kniebeugen mit Langhantel","3 × 6–10","https://www.youtube.com/watch?v=Hvzc-yEquAo",3],["Rumänisches Kreuzheben mit Langhantel","3 × 8–12","https://www.youtube.com/watch?v=J3AsbKDVfpo",3],["Bulgarian Split Squats mit Kurzhanteln","3 × 8–12 je Seite","https://www.youtube.com/watch?v=kXpHM5lQ9WI",3],["Hip Thrust mit Langhantel","3 × 8–12","https://www.youtube.com/watch?v=tWw2JXKmg50",3],["Wadenheben mit Kurzhanteln/Langhantel","3 × 12–20","https://www.youtube.com/watch?v=V5QESK0yiqU",3],["Plank oder gewichtete Crunches","3 Sätze","https://www.youtube.com/watch?v=OVJVdSEj9XM",3]]}};
+let active=localStorage.getItem("activeDay")||"push",interval=null;
+function k(d,i,s){return `v2_${d}_${i}_${s}`} function f(d,i,n){return `v2_${d}_${i}_${n}`}
+function sg(key){try{return localStorage.getItem(key)||""}catch(e){return ""}} function ss(key,val){try{localStorage.setItem(key,val)}catch(e){}}
+function esc(s){return String(s).replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
+function render(){for(const d of Object.keys(plan)){const el=document.getElementById(d);el.innerHTML=`<div class="summary"><strong>${plan[d].title}:</strong> ${plan[d].summary}</div>`;plan[d].ex.forEach((x,i)=>{let sets="";for(let s=0;s<x[3];s++){sets+=`<button class="set ${sg(k(d,i,s))==="1"?"done":""}" onclick="toggle('${d}',${i},${s})">Satz ${s+1}</button>`}el.innerHTML+=`<article class="card"><div class="top"><div><h2>${x[0]}</h2><div class="meta">${x[1]}</div></div><a class="button video" href="${x[2]}" target="_blank" rel="noopener">Video</a></div><div class="sets">${sets}</div><div class="inputs"><input inputmode="decimal" placeholder="Gewicht z. B. 60 kg" value="${esc(sg(f(d,i,'kg')))}" oninput="ss('${f(d,i,'kg')}',this.value)"><input inputmode="numeric" placeholder="Wdh. z. B. 10/9/8" value="${esc(sg(f(d,i,'reps')))}" oninput="ss('${f(d,i,'reps')}',this.value)"><input class="note" placeholder="Notiz / Technikgefühl" value="${esc(sg(f(d,i,'note')))}" oninput="ss('${f(d,i,'note')}',this.value)"></div></article>`})}showDay(active,false)}
+function showDay(d,scroll=true){active=d;ss("activeDay",d);document.querySelectorAll(".day").forEach(x=>x.classList.toggle("active",x.id===d));document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.getElementById("tab-"+d).classList.add("active");progress();if(scroll)window.scrollTo({top:0,behavior:"smooth"})}
+function toggle(d,i,s){ss(k(d,i,s),sg(k(d,i,s))==="1"?"0":"1");render()}
+function progress(){let total=0,done=0;plan[active].ex.forEach((x,i)=>{for(let s=0;s<x[3];s++){total++;if(sg(k(active,i,s))==="1")done++}});let pct=total?Math.round(done/total*100):0;document.getElementById("bar").style.width=pct+"%";document.getElementById("pct").textContent=pct+"%"}
+function timer(sec){clearInterval(interval);let r=sec,el=document.getElementById("timer");function tick(){let m=String(Math.floor(r/60)).padStart(2,"0"),s=String(r%60).padStart(2,"0");el.textContent=m+":"+s;if(r<=0){clearInterval(interval);el.textContent="Fertig";if(navigator.vibrate)navigator.vibrate([180,80,180])}r--}tick();interval=setInterval(tick,1000)}
+function resetCurrent(){if(!confirm("Diesen Trainingstag zurücksetzen?"))return;plan[active].ex.forEach((x,i)=>{for(let s=0;s<x[3];s++)localStorage.removeItem(k(active,i,s))});render()}
+function exportData(){let rows=[];Object.keys(plan).forEach(d=>plan[d].ex.forEach((x,i)=>rows.push(`${plan[d].title};${x[0]};${sg(f(d,i,'kg'))};${sg(f(d,i,'reps'))};${sg(f(d,i,'note'))}`)));let blob=new Blob(["Tag;Übung;Gewicht;Wdh;Notiz\n"+rows.join("\n")],{type:"text/csv"});let url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="training-export.csv";a.click();URL.revokeObjectURL(url)}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+render();
+</script>
+</body>
+</html>
