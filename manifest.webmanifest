@@ -1,0 +1,8 @@
+{
+  "name": "3er Split Training Satzgewichte",
+  "short_name": "3er Split",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#080b14",
+  "theme_color": "#080b14"
+}
